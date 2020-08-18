@@ -5,12 +5,14 @@
 				<q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen" />
 
 				<q-avatar square>
-					<img src="~assets/logo.png" />
+					<img src="~assets/logo-full.png" />
 				</q-avatar>
 
 				<q-toolbar-title>
 					DoubleDice
 				</q-toolbar-title>
+
+				<!-- <q-btn :icon="$q.dark.isActive ? 'wb_sunny' : 'brightness_3'" @click="$q.dark.toggle()" /> -->
 			</q-toolbar>
 		</q-header>
 
@@ -61,6 +63,12 @@ export default {
 					icon: 'chat',
 					link: 'https://discord.gg/JqnXeqG'
 				},
+				{
+					title: 'Vote For LootkitWitness',
+					caption: '@lootkit.witness - we really appreciate it!',
+					icon: 'check',
+					link: 'https://peakd.com/@lootkit.witness'
+				}
 			]
 		}
 	}

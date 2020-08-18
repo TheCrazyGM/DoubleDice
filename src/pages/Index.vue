@@ -31,8 +31,7 @@
 				{label: 'HBD', value: 'HBD'}, {label: 'SIM', value: 'SIM'}, {label: 'ARCHON', value: 'ARCHON'},
 				{label: 'HUSTLER', value: 'HUSTLER'}, {label: 'BATTLE', value: 'BATTLE'}]" />
 				<br><br>
-				<q-btn-toggle v-model="currency" toggle-color="info" :options="[{label: 'STEEM', value: 'STEEM'},
-				{label: 'SBD', value: 'SBD'}, {label: 'UFM', value: 'UFM'}]" />
+				<q-btn-toggle v-model="currency" toggle-color="info" :options="[{label: 'STEEM', value: 'STEEM'}, {label: 'UFM', value: 'UFM'}]" />
 
 				<div>
 					<q-btn :label="'Gamble '+bet_amount+' '+currency" type="submit" color="positive" />
@@ -73,6 +72,10 @@ export default {
 			dice_roll: 1,
 			bet_amount: 0.100,
 			currency: 'HIVE',
+			max_bets: {
+				hive: 0, hbd: 0, sim: 0, archon: 0, hustler: 0, battle: 0, steem: 0, ufm: 0
+			},
+			loading: false,
 		}
 	},
 
@@ -91,10 +94,67 @@ export default {
 
 		if (window.hive_keychain) {
         	hive_keychain.requestHandshake(() => { console.log('%c Keychain Found! ', styles) })
-    	} else console.error('No \'window.hive_keychain\' Found')
+		} else console.error('No \'window.hive_keychain\' Found')
+		
+		this.get_max_bets();
+
 	},
 
 	methods: {
+		get_max_bets() {
+			this.$q.loading.show({
+				message: '<strong>Updating Max Bet Balances</strong><br/><span class="text-primary"><em>hang on...</em></span>'
+			})
+
+			console.log('Getting Balances...');
+
+			let self = this;
+
+			hive.api.getAccounts(['doubledice'], function(err, response){
+				if (err) console.error(err)
+				else {
+					self.max_bets.hive = Number(response[0].balance.substr(0, response[0].balance.indexOf(' H'))) / 50;
+					self.max_bets.hbd = Number(response[0].sbd_balance.substr(0, response[0].sbd_balance.indexOf(' H'))) / 50;
+				}
+			});
+
+			let hive_ssc = new SSC('https://api.hive-engine.com/rpc');
+			let steem_ssc = new SSC('https://api.steem-engine.com/rpc');
+
+			hive_ssc.find('tokens', 'balances', {account: 'doubledice'}, 1000, 0, [], (err, result) => {
+				result.forEach(data => {
+					console.log(data.symbol, data.balance)
+					switch (data.symbol) {
+						case 'SIM':
+							self.max_bets.sim = Number(data.balance) / 50;
+							break;
+						case 'ARCHON':
+							self.max_bets.archon = Number(data.balance) / 50;
+							break;
+						case 'HUSTLER':
+							self.max_bets.hustler = Number(data.balance) / 50;
+							break;
+						case 'BATTLE':
+							self.max_bets.battle = Number(data.balance) / 50;
+							break;
+					}
+				})
+			}).then(() => {
+				steem_ssc.find('tokens', 'balances', {account: 'doubledice'}, 1000, 0, [], (err, result) => {
+					result.forEach(data => {
+						console.log(data.symbol, data.balance)
+						switch (data.symbol) {
+							case 'UFM':
+								self.max_bets.ufm = Number(data.balance) / 50;
+								break;
+						}
+					})
+				}).then(() => {
+					self.$q.loading.hide()
+				})
+			})
+		},
+
 		onSubmit() {
 			let json_data = ''
 			if (this.currency == 'HIVE') {
@@ -107,12 +167,15 @@ export default {
 					console.log(response);
 				})
 			}
+
+			this.get_max_bets();
 		},
 
 		onReset() {
 			this.hive_account = null
 			this.dice_roll = 1  
 			this.bet_amount = 0
+			this.get_max_bets();
 		},
 	},
 
@@ -120,10 +183,29 @@ export default {
 			max_bet() {
 				let maxbet = 0
 
-				if (this.currency == 'ARCHON') maxbet = 50
-				else if (this.currency == 'HIVE') maxbet = 5
-				else {
-					maxbet = 100
+				if (this.currency == 'HIVE') {
+					this.max_bets.hive > 5 ? maxbet = 5 : maxbet = this.max_bets.hive
+				}
+				else if (this.currency == 'HBD') {
+					maxbet = this.max_bets.hbd
+				}
+				else if (this.currency == 'SIM') {
+					maxbet = this.max_bets.sim
+				}
+				else if (this.currency == 'ARCHON') {
+					this.max_bets.archon > 50 ? maxbet = 50 : maxbet = this.max_bets.archon
+				}
+				else if (this.currency == 'HUSTLER') {
+					maxbet = this.max_bets.hustler
+				}
+				else if (this.currency == 'BATTLE') {
+					maxbet = this.max_bets.battle
+				}
+				else if (this.currency == 'STEEM') {
+					maxbet = 1
+				}
+				else if (this.currency == 'UFM') {
+					maxbet = this.max_bets.ufm
 				}
 
 				return maxbet
