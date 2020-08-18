@@ -1,6 +1,6 @@
-# UFM Lotto (ufm-lotto)
+# DoubleDice Frontend App
 
-companion site for the Archon / UpFundMe Doule Dice Lotto
+companion site for the Archon / UpFundMe DouleDice game
 
 ## Install the dependencies
 ```bash
