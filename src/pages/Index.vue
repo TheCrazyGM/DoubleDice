@@ -3,7 +3,7 @@
 		<div class="row q-gutter-md gamble-page">
 			<q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
 				<p>Name:</p>
-				<q-input filled clearable autofocus v-model="hive_account" label="Hive Account *" hint="the hive account paying for this tickets" lazy-rules
+				<q-input filled clearable autofocus v-model="hive_account" label="Your Account *" hint="the account paying for this roll, either Hive or Steem" lazy-rules
 				:rules="[ val => val && val.length > 0 || 'PLEASE TYPE A NAME']">
 					<template v-slot:prepend>
 						<q-icon name="account_box" />
@@ -93,8 +93,12 @@ export default {
 		].join(';');
 
 		if (window.hive_keychain) {
-        	hive_keychain.requestHandshake(() => { console.log('%c Keychain Found! ', styles) })
+        	hive_keychain.requestHandshake(() => { console.log('%c HiveKeychain Found! ', styles) })
 		} else console.error('No \'window.hive_keychain\' Found')
+
+		if (window.steem_keychain) {
+        	steem_keychain.requestHandshake(() => { console.log('%c SteemKeychain Found! ', styles) })
+		} else console.error('No \'window.steem_keychain\' Found')
 		
 		this.get_max_bets();
 
@@ -157,7 +161,18 @@ export default {
 
 		onSubmit() {
 			let json_data = ''
-			if (this.currency == 'HIVE') {
+			
+			if (this.currency == 'STEEM') {
+				steem_keychain.requestTransfer(this.hive_account, 'doubledice', Number(this.bet_amount).toFixed(3), this.dice_roll.toString(), 'STEEM', function(response) {
+					console.log(response);
+				})
+			}
+			else if (this.currency == 'UFM') {
+				steem_keychain.requestSendToken(this.hive_account, 'doubledice', Number(this.bet_amount).toFixed(3), this.dice_roll.toString(), this.currency, function(response) {
+					console.log(response);
+				})
+			}
+			else if (this.currency == 'HIVE') {
 				hive_keychain.requestTransfer(this.hive_account, 'doubledice', Number(this.bet_amount).toFixed(3), this.dice_roll.toString(), 'HIVE', function(response) {
 					console.log(response);
 				})
